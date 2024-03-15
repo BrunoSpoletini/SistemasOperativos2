@@ -11,13 +11,18 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <iostream>
+#include <string>
+
+#include <stdlib.h>
 
 /// Loop 10 times, yielding the CPU to another ready thread each iteration.
 ///
 /// * `name` points to a string with a thread name, just for debugging
 ///   purposes.
 
-bool thread2Done = false;
+int numThreads = 5;
+int threadNDone[5];
 void
 SimpleThread(void *name_)
 {
@@ -29,9 +34,9 @@ SimpleThread(void *name_)
         printf("*** Thread `%s` is running: iteration %u\n", currentThread->GetName(), num);
         currentThread->Yield();
     }
-    if (strcmp(currentThread->GetName(),"2nd")==0) {
-	thread2Done = true;
-    }
+    int nThread = atoi(currentThread->GetName())-1;
+	threadNDone[nThread] = 1;
+
     printf("!!! Thread `%s` has finished SimpleThread\n", currentThread->GetName());
  
 }
@@ -42,16 +47,24 @@ SimpleThread(void *name_)
 /// calling `SimpleThread` on the current thread.
 void
 ThreadTestSimple()
-{
-    Thread *newThread = new Thread("2nd");
-    newThread->Fork(SimpleThread, NULL);
-
+{   
+    for (int i = 1; i < numThreads; i++) {
+        threadNDone[i] = 0;
+        char* threadName = new char[10];
+        sprintf(threadName, "%d", i+1);
+        Thread *newThread = new Thread( threadName );
+        newThread->Fork(SimpleThread, NULL);
+    }
+    
     //the "main" thread also executes the same function
     SimpleThread(NULL);
 
-   //Wait for the 2nd thread to finish if needed
-    while (!thread2Done) {
-        currentThread->Yield(); 
-    }
+   //Wait for every thread to finish if needed
+   for (int i = 1 ; i < numThreads; i++) {
+       while (threadNDone[i] == 0) {
+           currentThread->Yield();
+       }
+   }
+
     printf("Test finished\n");
 }

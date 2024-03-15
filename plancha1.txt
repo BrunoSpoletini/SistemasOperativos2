@@ -1,0 +1,179 @@
+1. ¿Por qué se prefiere emular una CPU en vez de utilizar directamente la CPU existente?
+    La emulación puede proporcionar un entorno aislado para ejecutar software, 
+    lo que es útil para probar aplicaciones en un entorno controlado sin afectar el sistema host.
+    Sumado a esto, este entorno aislado hace que no sea necesario lidiar con el booteo del sistema.
+
+2. ¿Cuánta memoria tiene la máquina simulada para Nachos?
+    Esto esta definido en el archivo \bin\int.h:
+        #define MEMSIZE   (1 << 24)
+    1<<24 = 2^24 = 16777216 bytes = 16 MB
+    Por lo que la maquina simulada para NACHOS tiene 16MB de memoria asignada por defecto
+
+3. ¿Qué modificaría para cambiar la cantidad de memoria?
+    Modificaria el valor del define MEMSIZE en el archivo \bin\int.h
+
+4. ¿De qué tamaño es un disco?
+    Esto esta definido en \machine\disk.hh:
+
+    const unsigned SECTOR_SIZE = 128;       ///< Number of bytes per disk sector.
+    const unsigned SECTORS_PER_TRACK = 32;  ///< Number of sectors per disk
+                                            ///< track.
+    const unsigned NUM_TRACKS = 32;         ///< Number of tracks per disk.
+    const unsigned NUM_SECTORS = SECTORS_PER_TRACK * NUM_TRACKS;
+
+    El tamaño es de 128*32*32 bytes = 128 kbytes 
+
+5. ¿Cuántas instrucciones de MIPS simula la maquina virtual de Nachos?
+    Nachos simula 58 instrucciones de MIPS. 
+    Esto puede verse en el archivo \machine\encoding.hh, en el cual se 
+    definen los codigos de cada instruccion.
+
+6. ¿En qué archivos está definida la función main? ¿En que archivo está definida la función
+main del ejecutable nachos del directorio userprog?
+
+
+
+La funcion main esta definida en los siguientes archivos:
+
+    \bin\coff2flat.c
+    \bin\coff2noff.c
+    \bin\disasm.c 
+    \bin\main.c  
+    \bin\out.c  
+    \bin\readnoff.c  
+    \bin\fuse\nachosfuse.c 
+
+    \threads\main.cc  
+
+    \userland\echo.c
+    \userland\filetest.c
+    \userland\halt.c
+    \userland\matmult.c
+    \userland\shell.c
+    \userland\sort.c
+    \userland\tinyshell.c
+    \userland\touch.c
+
+En la carpeta userland se encuentran definidos los programas de usuario.
+El main del archivo main.cc de la carpeta threads es el encargado de ejecutar el nachos.
+
+7. Nombre los archivos fuente en los que figuran las funciones y métodos llamados por el
+main de Nachos al ejecutarlo en el directorio threads, hasta dos niveles de profundidad.
+Por ejemplo: main llama a Initialize, que está en tal archivo; e Initialize llama
+a ASSERT, que está en tal otro archivo.
+
+En la funcion main se llaman las siguientes funciones:
+main <- \code\threads\main.cc
+    Initialize <- \code\threads\system.cc
+        ASSERT <- \code\lib\assert.hh
+        ParseDebugOpts <- \code\threads\system.cc
+        SetFlags <- \code\lib\debug.cc
+        SetOpts <- \code\lib\debug.cc
+        SetStatus <- \code\threads\thread.cc
+        Enable <- \code\machine\interrupt.cc
+        SetExceptionHandlers <- \code\userprog\exception.cc
+    Copy <- \code\filesys\fs_test.cc
+    Print <- \code\filesys\fs_test.cc
+    PerformanceTest <- \code\filesys\fs_test.cc
+        FileWrite <- \code\filesys\fs_test.cc
+        FileRead <- \code\filesys\fs_test.cc
+    StartProcess <-
+        InitRegisters <- \code\userprog\address_space.cc
+        RestoreState <- \code\userprog\address_space.cc
+        Run <- \code\machine\mips_sim.cc
+    ConsoleTest <- \code\userprog\prog_test.cc
+        P <- \code\threads\semaphore.cc
+    DEBUG <- \code\lib\utility.hh
+    
+    SysInfo
+    ThreadTest
+    Finish
+
+8. ¿Qué efecto hacen las macros ASSERT y DEBUG definidas en lib/utility.hh?
+Las macros se definen como:
+#define ASSERT(condition)  Assert(condition, #condition, __FILE__, __LINE__)
+#define DEBUG(...)  (debug.Print)(__FILE__, __LINE__, __func__, __VA_ARGS__)
+
+9. Comente el efecto de las distintas banderas de depuración.
+Corriendo nachos con -d <debugFlags> se imprimen distintos mensajes de debug.
+Las opciones para las banderas de depuracion activan su categoria de mensajes respectiva:
++ -- activa todos los mensajes de debug
+t -- sistema de hilos
+s -- semaforo, locks y condicionales
+i -- interrupcion del sistema
+m -- emulacion de la maquina (requiere *USER_PROGRAM*).
+d -- emulacion del disco (requiere *FILESYS*).
+f -- sistema de archivos (requiere *FILESYS*).
+a -- espacio de direcciones (requiere *USER_PROGRAM*).
+e -- manejo de excepciones (requiere *USER_PROGRAM*).
+
+10. ¿Dónde están definidas las constantes USER_PROGRAM, FILESYS NEEDED, FILESYS STUB
+y NETWORK?
+Las constantes se definen en los archivos makefile, segun la ubicacion en la que se compile el nachos
+
+11. ¿Qué argumentos de línea de comandos admite Nachos? ¿Qué efecto tiene la opción
+-rs?
+Los argumentos de linea de comando que admite nachos tienen la forma:
+     nachos [-d <debugflags>] [-do <debugopts>] 
+            [-rs <random seed #>] [-z] [-tt|-tN] 
+            [-m <num phys pages>]
+            [-s] [-x <nachos file>] [-tc <consoleIn> <consoleOut>] 
+            [-f] [-cp <unix file> <nachos file>] [-pr <nachos file>]
+            [-rm <nachos file>] [-ls] [-D] [-c] [-tf]
+
+La opcion -rs <randomSeed> hace que los hilos del procesador simulado cedan el procesamiento
+a otros hilos en instantes de tiempo aleatorios (pero repetibles gracias a la randomSeed ingresada).
+
+12. Al ejecutar nachos -i, se obtiene información del sistema. Sin embargo está incom-
+pleta. Modifique el código para que se muestren los datos que faltan.
+
+Movimos las declaraciones de disk.cc a disk.hh
+Y en el archivo sys_info agregamos:
+
+#include "machine/mmu.hh"
+
+    printf("\n\
+Memory:\n\
+  Page size: %d bytes.\n\
+  Number of pages: %d.\n\
+  Number of TLB entries: %d.\n\
+  Memory size: %d bytes.\n", 
+      PAGE_SIZE, DEFAULT_NUM_PHYS_PAGES, TLB_SIZE, MEMORY_SIZE);
+    printf("\n\
+Disk:\n\
+  Sector size: %d bytes.\n\
+  Sectors per track: %d.\n\
+  Number of tracks: %d.\n\
+  Number of sectors: %d.\n\
+  Disk size: %d bytes.\n",    SECTOR_SIZE, SECTORS_PER_TRACK,
+                              NUM_TRACKS, NUM_SECTORS, DISK_SIZE);
+
+13. ¿Cuál es la diferencia entre las clases List y SynchList?
+
+La clase List define una lista simplemente enlazada en la que se tienen punteros al inicio
+y al final de la misma.
+La clase SynchList implementa una lista enlazada usando locks, 
+lo que permite que sea accedida de forma concurrente por mas de un hilo.
+
+14. Modifique el caso de prueba simple del directorio threads para que se generen 5 hilos
+en lugar de 2.
+
+Resuelto en el archivo thread_test_simple.cc
+Se puede correr usando:
+> make && ./threads/nachos -t0
+
+15. Modifique el caso de prueba para que estos cinco hilos utilicen un semaforo inicializado
+en 3. Esto debe ocurrir solo si se define la macro de compilacion SEMAPHORE TEST.
+
+
+
+16. Agregue al caso anterior una lınea de depuracion que diga cuando cada hilo hace un P()
+y cuando un V(). La salida debe verse por pantalla solamente si se activa la bandera
+de depuracion correspondiente.
+
+17. En threads se provee un caso de prueba que implementa el jardın ornamental. Sin
+embargo, el resultado es erroneo. Corrijalo de forma que se mantengan los cambios de
+contexto, sin agregar nuevas variables.
+
+18. Replique el jardın ornamental en un nuevo caso de prueba. Revierta la solucion anterior
+y solucione el problema usando semaforos esta vez
