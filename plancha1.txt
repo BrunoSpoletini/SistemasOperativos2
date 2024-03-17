@@ -158,22 +158,252 @@ lo que permite que sea accedida de forma concurrente por mas de un hilo.
 14. Modifique el caso de prueba simple del directorio threads para que se generen 5 hilos
 en lugar de 2.
 
-Resuelto en el archivo thread_test_simple.cc
-Se puede correr usando:
+Resuelto en el archivo thread_test_simple.cc: 
+
+#include "thread_test_simple.hh"
+#include "system.hh"
+
+#include <stdio.h>
+#include <string.h>
+
+#include <iostream>
+#include <string>
+
+#include <stdlib.h>
+
+/// Loop 10 times, yielding the CPU to another ready thread each iteration.
+///
+/// * `name` points to a string with a thread name, just for debugging
+///   purposes.
+
+int numThreads = 5;
+int threadNDone[5];
+void
+SimpleThread(void *name_)
+{
+
+    // If the lines dealing with interrupts are commented, the code will
+    // behave incorrectly, because printf execution may cause race
+    // conditions.
+    for (unsigned num = 0; num < 10; num++) {
+        printf("*** Thread `%s` is running: iteration %u\n", currentThread->GetName(), num);
+        currentThread->Yield();
+    }
+    int nThread = atoi(currentThread->GetName())-1;
+	threadNDone[nThread] = 1;
+
+    printf("!!! Thread `%s` has finished SimpleThread\n", currentThread->GetName());
+ 
+}
+
+/// Set up a ping-pong between several threads.
+///
+/// Do it by launching one thread which calls `SimpleThread`, and finally
+/// calling `SimpleThread` on the current thread.
+void
+ThreadTestSimple()
+{   
+    for (int i = 1; i < numThreads; i++) {
+        threadNDone[i] = 0;
+        char* threadName = new char[10];
+        sprintf(threadName, "%d", i+1);
+        Thread *newThread = new Thread( threadName );
+        newThread->Fork(SimpleThread, NULL);
+    }
+    
+    //the "main" thread also executes the same function
+    SimpleThread(NULL);
+
+   //Wait for every thread to finish if needed
+   for (int i = 1 ; i < numThreads; i++) {
+       while (threadNDone[i] == 0) {
+           currentThread->Yield();
+       }
+   }
+
+    printf("Test finished\n");
+}
+
 > make && ./threads/nachos -t0
 
 15. Modifique el caso de prueba para que estos cinco hilos utilicen un semaforo inicializado
 en 3. Esto debe ocurrir solo si se define la macro de compilacion SEMAPHORE TEST.
 
 
-
 16. Agregue al caso anterior una lınea de depuracion que diga cuando cada hilo hace un P()
 y cuando un V(). La salida debe verse por pantalla solamente si se activa la bandera
 de depuracion correspondiente.
 
+ make && ./threads/nachos -tt -d s 
+
+
+/// Copyright (c) 1992-1993 The Regents of the University of California.
+///               2007-2009 Universidad de Las Palmas de Gran Canaria.
+///               2016-2021 Docentes de la Universidad Nacional de Rosario.
+/// All rights reserved.  See `copyright.h` for copyright notice and
+/// limitation of liability and disclaimer of warranty provisions.
+
+
+#include "thread_test_simple_semaphore.hh"
+#include "semaphore.hh"
+#include "system.hh"
+
+#include <stdio.h>
+#include <string.h>
+
+#include <iostream>
+#include <string>
+
+#include <stdlib.h>
+
+
+/// Loop 10 times, yielding the CPU to another ready thread each iteration.
+///
+/// * `name` points to a string with a thread name, just for debugging
+///   purposes.
+
+int numThreadsSem = 5;
+static Semaphore *semaphore = new Semaphore("test", 3);
+
+void
+SemaphoreThreadSem(void *name_)
+{
+    DEBUG('s', "El thread `%s` aumenta el semaforo en uno\n", currentThread->GetName());
+    semaphore->V();
+    // If the lines dealing with interrupts are commented, the code will
+    // behave incorrectly, because printf execution may cause race
+    // conditions.
+    for (unsigned num = 0; num < 10; num++) {
+        printf("*** Thread `%s` is running: iteration %u\n", currentThread->GetName(), num);
+        currentThread->Yield();
+    }
+    DEBUG('s', "El thread `%s` disminuye el semaforo en uno\n", currentThread->GetName());
+    semaphore->P();
+    printf("!!! Thread `%s` has finished SimpleThread\n", currentThread->GetName());
+ 
+}
+
+/// Set up a ping-pong between several threads.
+
+void
+ThreadTestSimpleSemaphore()
+{
+    for (int i = 1; i < numThreadsSem; i++) {
+        char* threadName = new char[10];
+        sprintf(threadName, "%d", i+1);
+        Thread *newThread = new Thread( threadName );
+        newThread->Fork(SemaphoreThreadSem, NULL);
+    }
+    
+    //the "main" thread also executes the same function
+    SemaphoreThreadSem(NULL);
+
+    DEBUG('s', "Main disminuye el semaforo en tres\n", currentThread->GetName());
+    for (int i=0; i<3; i++){
+        semaphore->P();
+    }
+
+    printf("Test finished\n");
+}
+
 17. En threads se provee un caso de prueba que implementa el jardın ornamental. Sin
 embargo, el resultado es erroneo. Corrijalo de forma que se mantengan los cambios de
 contexto, sin agregar nuevas variables.
+El cambio se realiza en la funcion Turnstile:
+static void
+Turnstile(void *n_)
+{
+    unsigned *n = (unsigned *) n_;
+
+    for (unsigned i = 0; i < ITERATIONS_PER_TURNSTILE; i++) {
+        int temp = count;
+        printf("Turnstile %u yielding with temp=%u.\n", *n, temp);
+        currentThread->Yield();
+        temp = count;
+        printf("Turnstile %u back with temp=%u.\n", *n, temp);
+        count = temp + 1;
+        currentThread->Yield();
+    }
+    printf("Turnstile %u finished. Count is now %u.\n", *n, count);
+    done[*n] = true;
+}
 
 18. Replique el jardın ornamental en un nuevo caso de prueba. Revierta la solucion anterior
 y solucione el problema usando semaforos esta vez
+
+
+/// Copyright (c) 1992-1993 The Regents of the University of California.
+///               2007-2009 Universidad de Las Palmas de Gran Canaria.
+///               2016-2021 Docentes de la Universidad Nacional de Rosario.
+/// All rights reserved.  See `copyright.h` for copyright notice and
+/// limitation of liability and disclaimer of warranty provisions.
+
+
+#include "thread_test_garden_sem.hh"
+#include "system.hh"
+#include "semaphore.hh"
+
+#include <stdio.h>
+
+
+static const unsigned NUM_TURNSTILES = 2;
+static const unsigned ITERATIONS_PER_TURNSTILE = 50;
+static bool done[NUM_TURNSTILES];
+static int count;
+static Semaphore *semaphore = new Semaphore("test", 1);
+static void
+TurnstileSem(void *n_)
+{
+    unsigned *n = (unsigned *) n_;
+
+    for (unsigned i = 0; i < ITERATIONS_PER_TURNSTILE; i++) {
+        semaphore->P();
+        int temp = count;
+        printf("Turnstile %u yielding with temp=%u.\n", *n, temp);
+        currentThread->Yield();
+        printf("Turnstile %u back with temp=%u.\n", *n, temp);
+        count = temp + 1;
+        semaphore->V();
+        currentThread->Yield();
+    }
+    printf("Turnstile %u finished. Count is now %u.\n", *n, count);
+    done[*n] = true;
+}
+
+void
+ThreadTestGardenSem()
+{
+    //Launch a new thread for each turnstile 
+    //(except one that will be run by the main thread)
+
+    char **names = new char*[NUM_TURNSTILES];
+    unsigned *values = new unsigned[NUM_TURNSTILES];
+    for (unsigned i = 0; i < NUM_TURNSTILES; i++) {
+        printf("Launching turnstile %u.\n", i);
+        names[i] = new char[16];
+        sprintf(names[i], "Turnstile %u", i);
+        printf("Name: %s\n", names[i]);
+        values[i] = i;
+        Thread *t = new Thread(names[i]);
+        t->Fork(TurnstileSem, (void *) &(values[i]));
+    }
+   
+    // Wait until all turnstile threads finish their work.  `Thread::Join` is
+    // not implemented at the beginning, therefore an ad-hoc workaround is
+    // applied here.
+    for (unsigned i = 0; i < NUM_TURNSTILES; i++) {
+        while (!done[i]) {
+            currentThread->Yield();
+        }
+    }
+
+    printf("All turnstiles finished. Final count is %u (should be %u).\n",
+           count, ITERATIONS_PER_TURNSTILE * NUM_TURNSTILES);
+
+    // Free all the memory
+    for (unsigned i = 0; i < NUM_TURNSTILES; i++) {
+	delete[] names[i];
+    }
+    delete []values;
+    delete []names;
+}

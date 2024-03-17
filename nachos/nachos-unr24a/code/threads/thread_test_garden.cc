@@ -25,6 +25,7 @@ Turnstile(void *n_)
         int temp = count;
         printf("Turnstile %u yielding with temp=%u.\n", *n, temp);
         currentThread->Yield();
+        temp = count;
         printf("Turnstile %u back with temp=%u.\n", *n, temp);
         count = temp + 1;
         currentThread->Yield();
