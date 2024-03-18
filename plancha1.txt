@@ -1,4 +1,5 @@
 1. ¿Por qué se prefiere emular una CPU en vez de utilizar directamente la CPU existente?
+
     La emulación puede proporcionar un entorno aislado para ejecutar software, 
     lo que es útil para probar aplicaciones en un entorno controlado sin afectar el sistema host.
     Sumado a esto, este entorno aislado hace que no sea necesario lidiar con el booteo del sistema.
@@ -31,68 +32,68 @@
 6. ¿En qué archivos está definida la función main? ¿En que archivo está definida la función
 main del ejecutable nachos del directorio userprog?
 
+    La funcion main esta definida en los siguientes archivos:
 
+        \bin\coff2flat.c
+        \bin\coff2noff.c
+        \bin\disasm.c 
+        \bin\main.c  
+        \bin\out.c  
+        \bin\readnoff.c  
+        \bin\fuse\nachosfuse.c 
 
-La funcion main esta definida en los siguientes archivos:
+        \threads\main.cc  
 
-    \bin\coff2flat.c
-    \bin\coff2noff.c
-    \bin\disasm.c 
-    \bin\main.c  
-    \bin\out.c  
-    \bin\readnoff.c  
-    \bin\fuse\nachosfuse.c 
+        \userland\echo.c
+        \userland\filetest.c
+        \userland\halt.c
+        \userland\matmult.c
+        \userland\shell.c
+        \userland\sort.c
+        \userland\tinyshell.c
+        \userland\touch.c
 
-    \threads\main.cc  
-
-    \userland\echo.c
-    \userland\filetest.c
-    \userland\halt.c
-    \userland\matmult.c
-    \userland\shell.c
-    \userland\sort.c
-    \userland\tinyshell.c
-    \userland\touch.c
-
-En la carpeta userland se encuentran definidos los programas de usuario.
-El main del archivo main.cc de la carpeta threads es el encargado de ejecutar el nachos.
+    En la carpeta userland se encuentran definidos los programas de usuario.
+    El main del archivo main.cc de la carpeta threads es el encargado de ejecutar el nachos.
 
 7. Nombre los archivos fuente en los que figuran las funciones y métodos llamados por el
 main de Nachos al ejecutarlo en el directorio threads, hasta dos niveles de profundidad.
 Por ejemplo: main llama a Initialize, que está en tal archivo; e Initialize llama
 a ASSERT, que está en tal otro archivo.
 
-En la funcion main se llaman las siguientes funciones:
-main <- \code\threads\main.cc
-    Initialize <- \code\threads\system.cc
-        ASSERT <- \code\lib\assert.hh
-        ParseDebugOpts <- \code\threads\system.cc
-        SetFlags <- \code\lib\debug.cc
-        SetOpts <- \code\lib\debug.cc
-        SetStatus <- \code\threads\thread.cc
-        Enable <- \code\machine\interrupt.cc
-        SetExceptionHandlers <- \code\userprog\exception.cc
-    Copy <- \code\filesys\fs_test.cc
-    Print <- \code\filesys\fs_test.cc
-    PerformanceTest <- \code\filesys\fs_test.cc
-        FileWrite <- \code\filesys\fs_test.cc
-        FileRead <- \code\filesys\fs_test.cc
-    StartProcess <-
-        InitRegisters <- \code\userprog\address_space.cc
-        RestoreState <- \code\userprog\address_space.cc
-        Run <- \code\machine\mips_sim.cc
-    ConsoleTest <- \code\userprog\prog_test.cc
-        P <- \code\threads\semaphore.cc
-    DEBUG <- \code\lib\utility.hh
-    
-    SysInfo
-    ThreadTest
-    Finish
+    En la funcion main se llaman las siguientes funciones:
+    main <- \code\threads\main.cc
+        Initialize <- \code\threads\system.cc
+            ASSERT <- \code\lib\assert.hh
+            ParseDebugOpts <- \code\threads\system.cc
+            SetFlags <- \code\lib\debug.cc
+            SetOpts <- \code\lib\debug.cc
+            SetStatus <- \code\threads\thread.cc
+            Enable <- \code\machine\interrupt.cc
+            SetExceptionHandlers <- \code\userprog\exception.cc
+        Copy <- \code\filesys\fs_test.cc
+        Print <- \code\filesys\fs_test.cc
+        PerformanceTest <- \code\filesys\fs_test.cc
+            FileWrite <- \code\filesys\fs_test.cc
+            FileRead <- \code\filesys\fs_test.cc
+        StartProcess <-
+            InitRegisters <- \code\userprog\address_space.cc
+            RestoreState <- \code\userprog\address_space.cc
+            Run <- \code\machine\mips_sim.cc
+        ConsoleTest <- \code\userprog\prog_test.cc
+            P <- \code\threads\semaphore.cc
+        DEBUG <- \code\lib\utility.hh
+        
+        SysInfo
+        ThreadTest
+        Finish
 
 8. ¿Qué efecto hacen las macros ASSERT y DEBUG definidas en lib/utility.hh?
 Las macros se definen como:
 #define ASSERT(condition)  Assert(condition, #condition, __FILE__, __LINE__)
 #define DEBUG(...)  (debug.Print)(__FILE__, __LINE__, __func__, __VA_ARGS__)
+Y sustituyen las cadenas ASSERT y DEBUG por los llamadas a dichas funciones, 
+pasandoles los parametros dados entre parentesis.
 
 9. Comente el efecto de las distintas banderas de depuración.
 Corriendo nachos con -d <debugFlags> se imprimen distintos mensajes de debug.
@@ -109,7 +110,9 @@ e -- manejo de excepciones (requiere *USER_PROGRAM*).
 
 10. ¿Dónde están definidas las constantes USER_PROGRAM, FILESYS NEEDED, FILESYS STUB
 y NETWORK?
-Las constantes se definen en los archivos makefile, segun la ubicacion en la que se compile el nachos
+Las constantes USER_PROGRAM y FILESYS se definen en los makefile de los directorios filesys,
+userprog y vmem.
+Y la constante FILESYS_STUB está definida en los makefile de los directorios userprog y vmem.
 
 11. ¿Qué argumentos de línea de comandos admite Nachos? ¿Qué efecto tiene la opción
 -rs?
@@ -229,13 +232,102 @@ ThreadTestSimple()
 15. Modifique el caso de prueba para que estos cinco hilos utilicen un semaforo inicializado
 en 3. Esto debe ocurrir solo si se define la macro de compilacion SEMAPHORE TEST.
 
+/// Copyright (c) 1992-1993 The Regents of the University of California.
+///               2007-2009 Universidad de Las Palmas de Gran Canaria.
+///               2016-2021 Docentes de la Universidad Nacional de Rosario.
+/// All rights reserved.  See `copyright.h` for copyright notice and
+/// limitation of liability and disclaimer of warranty provisions.
+
+
+#include "thread_test_simple.hh"
+#include "system.hh"
+#include "semaphore.hh"
+
+#include <stdio.h>
+#include <string.h>
+
+#include <iostream>
+#include <string>
+
+#include <stdlib.h>
+
+/// Loop 10 times, yielding the CPU to another ready thread each iteration.
+///
+/// * `name` points to a string with a thread name, just for debugging
+///   purposes.
+
+int numThreads = 5;
+int threadNDone[5];
+
+#ifdef SEMAPHORE_TEST
+    static Semaphore *semaphore = new Semaphore("test", 3);
+#endif
+
+void
+SimpleThread(void *name_)
+{
+    #ifdef SEMAPHORE_TEST
+        DEBUG('s', "El thread `%s` aumenta el semaforo en uno\n", currentThread->GetName());
+        semaphore->V();
+    #endif
+    // If the lines dealing with interrupts are commented, the code will
+    // behave incorrectly, because printf execution may cause race
+    // conditions.
+    for (unsigned num = 0; num < 10; num++) {
+        printf("*** Thread `%s` is running: iteration %u\n", currentThread->GetName(), num);
+        currentThread->Yield();
+    }
+    int nThread = atoi(currentThread->GetName())-1;
+	threadNDone[nThread] = 1;
+
+    #ifdef SEMAPHORE_TEST
+        DEBUG('s', "El thread `%s` disminuye el semaforo en uno\n", currentThread->GetName());
+        semaphore->P();
+    #endif
+
+    printf("!!! Thread `%s` has finished SimpleThread\n", currentThread->GetName());
+ 
+}
+
+/// Set up a ping-pong between several threads.
+///
+/// Do it by launching one thread which calls `SimpleThread`, and finally
+/// calling `SimpleThread` on the current thread.
+void
+ThreadTestSimple()
+{   
+    for (int i = 1; i < numThreads; i++) {
+        threadNDone[i] = 0;
+        char* threadName = new char[10];
+        sprintf(threadName, "%d", i+1);
+        Thread *newThread = new Thread( threadName );
+        newThread->Fork(SimpleThread, NULL);
+    }
+    
+    //the "main" thread also executes the same function
+    SimpleThread(NULL);
+
+    #ifdef SEMAPHORE_TEST
+        DEBUG('s', "Main disminuye el semaforo en tres\n", currentThread->GetName());
+        for (int i=0; i<3; i++){
+            semaphore->P();
+        }
+    #endif
+
+   //Wait for every thread to finish if needed
+   for (int i = 1 ; i < numThreads; i++) {
+       while (threadNDone[i] == 0) {
+           currentThread->Yield();
+       }
+   }
+
+    printf("Test finished\n");
+}
+
 
 16. Agregue al caso anterior una lınea de depuracion que diga cuando cada hilo hace un P()
 y cuando un V(). La salida debe verse por pantalla solamente si se activa la bandera
 de depuracion correspondiente.
-
- make && ./threads/nachos -tt -d s 
-
 
 /// Copyright (c) 1992-1993 The Regents of the University of California.
 ///               2007-2009 Universidad de Las Palmas de Gran Canaria.

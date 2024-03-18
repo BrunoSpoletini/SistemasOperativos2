@@ -7,6 +7,7 @@
 
 #include "thread_test_simple.hh"
 #include "system.hh"
+#include "semaphore.hh"
 
 #include <stdio.h>
 #include <string.h>
@@ -23,10 +24,18 @@
 
 int numThreads = 5;
 int threadNDone[5];
+
+#ifdef SEMAPHORE_TEST
+    static Semaphore *semaphore = new Semaphore("test", 3);
+#endif
+
 void
 SimpleThread(void *name_)
 {
-
+    #ifdef SEMAPHORE_TEST
+        DEBUG('s', "El thread `%s` aumenta el semaforo en uno\n", currentThread->GetName());
+        semaphore->V();
+    #endif
     // If the lines dealing with interrupts are commented, the code will
     // behave incorrectly, because printf execution may cause race
     // conditions.
@@ -36,6 +45,11 @@ SimpleThread(void *name_)
     }
     int nThread = atoi(currentThread->GetName())-1;
 	threadNDone[nThread] = 1;
+
+    #ifdef SEMAPHORE_TEST
+        DEBUG('s', "El thread `%s` disminuye el semaforo en uno\n", currentThread->GetName());
+        semaphore->P();
+    #endif
 
     printf("!!! Thread `%s` has finished SimpleThread\n", currentThread->GetName());
  
@@ -58,6 +72,13 @@ ThreadTestSimple()
     
     //the "main" thread also executes the same function
     SimpleThread(NULL);
+
+    #ifdef SEMAPHORE_TEST
+        DEBUG('s', "Main disminuye el semaforo en tres\n", currentThread->GetName());
+        for (int i=0; i<3; i++){
+            semaphore->P();
+        }
+    #endif
 
    //Wait for every thread to finish if needed
    for (int i = 1 ; i < numThreads; i++) {
