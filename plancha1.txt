@@ -53,6 +53,7 @@ main del ejecutable nachos del directorio userprog?
         \userland\tinyshell.c
         \userland\touch.c
 
+    Los archivos de la carpeta bin se encargan de traducir lenguaje C a instrucciones MIPS.
     En la carpeta userland se encuentran definidos los programas de usuario.
     El main del archivo main.cc de la carpeta threads es el encargado de ejecutar el nachos.
 
@@ -83,10 +84,10 @@ a ASSERT, que está en tal otro archivo.
         ConsoleTest <- \code\userprog\prog_test.cc
             P <- \code\threads\semaphore.cc
         DEBUG <- \code\lib\utility.hh
-        
-        SysInfo
-        ThreadTest
-        Finish
+        SysInfo <- \code\threads\sys_info.cc
+        ThreadTest <- \code\threads\thread_test.cc
+        Finish <- \code\threads\thread.cc
+            SetLevel <- \code\machine\interrupt.cc
 
 8. ¿Qué efecto hacen las macros ASSERT y DEBUG definidas en lib/utility.hh?
 Las macros se definen como:
@@ -111,8 +112,9 @@ e -- manejo de excepciones (requiere *USER_PROGRAM*).
 10. ¿Dónde están definidas las constantes USER_PROGRAM, FILESYS NEEDED, FILESYS STUB
 y NETWORK?
 Las constantes USER_PROGRAM y FILESYS se definen en los makefile de los directorios filesys,
-userprog y vmem.
+userprog y vmem. 
 Y la constante FILESYS_STUB está definida en los makefile de los directorios userprog y vmem.
+La constante NETWORK no esta definida.
 
 11. ¿Qué argumentos de línea de comandos admite Nachos? ¿Qué efecto tiene la opción
 -rs?
@@ -232,6 +234,10 @@ ThreadTestSimple()
 15. Modifique el caso de prueba para que estos cinco hilos utilicen un semaforo inicializado
 en 3. Esto debe ocurrir solo si se define la macro de compilacion SEMAPHORE TEST.
 
+16. Agregue al caso anterior una lınea de depuracion que diga cuando cada hilo hace un P()
+y cuando un V(). La salida debe verse por pantalla solamente si se activa la bandera
+de depuracion correspondiente.
+
 /// Copyright (c) 1992-1993 The Regents of the University of California.
 ///               2007-2009 Universidad de Las Palmas de Gran Canaria.
 ///               2016-2021 Docentes de la Universidad Nacional de Rosario.
@@ -308,8 +314,8 @@ ThreadTestSimple()
     SimpleThread(NULL);
 
     #ifdef SEMAPHORE_TEST
-        DEBUG('s', "Main disminuye el semaforo en tres\n", currentThread->GetName());
         for (int i=0; i<3; i++){
+            DEBUG('s', "Main disminuye el semaforo en uno\n", currentThread->GetName());
             semaphore->P();
         }
     #endif
@@ -324,79 +330,6 @@ ThreadTestSimple()
     printf("Test finished\n");
 }
 
-
-16. Agregue al caso anterior una lınea de depuracion que diga cuando cada hilo hace un P()
-y cuando un V(). La salida debe verse por pantalla solamente si se activa la bandera
-de depuracion correspondiente.
-
-/// Copyright (c) 1992-1993 The Regents of the University of California.
-///               2007-2009 Universidad de Las Palmas de Gran Canaria.
-///               2016-2021 Docentes de la Universidad Nacional de Rosario.
-/// All rights reserved.  See `copyright.h` for copyright notice and
-/// limitation of liability and disclaimer of warranty provisions.
-
-
-#include "thread_test_simple_semaphore.hh"
-#include "semaphore.hh"
-#include "system.hh"
-
-#include <stdio.h>
-#include <string.h>
-
-#include <iostream>
-#include <string>
-
-#include <stdlib.h>
-
-
-/// Loop 10 times, yielding the CPU to another ready thread each iteration.
-///
-/// * `name` points to a string with a thread name, just for debugging
-///   purposes.
-
-int numThreadsSem = 5;
-static Semaphore *semaphore = new Semaphore("test", 3);
-
-void
-SemaphoreThreadSem(void *name_)
-{
-    DEBUG('s', "El thread `%s` aumenta el semaforo en uno\n", currentThread->GetName());
-    semaphore->V();
-    // If the lines dealing with interrupts are commented, the code will
-    // behave incorrectly, because printf execution may cause race
-    // conditions.
-    for (unsigned num = 0; num < 10; num++) {
-        printf("*** Thread `%s` is running: iteration %u\n", currentThread->GetName(), num);
-        currentThread->Yield();
-    }
-    DEBUG('s', "El thread `%s` disminuye el semaforo en uno\n", currentThread->GetName());
-    semaphore->P();
-    printf("!!! Thread `%s` has finished SimpleThread\n", currentThread->GetName());
- 
-}
-
-/// Set up a ping-pong between several threads.
-
-void
-ThreadTestSimpleSemaphore()
-{
-    for (int i = 1; i < numThreadsSem; i++) {
-        char* threadName = new char[10];
-        sprintf(threadName, "%d", i+1);
-        Thread *newThread = new Thread( threadName );
-        newThread->Fork(SemaphoreThreadSem, NULL);
-    }
-    
-    //the "main" thread also executes the same function
-    SemaphoreThreadSem(NULL);
-
-    DEBUG('s', "Main disminuye el semaforo en tres\n", currentThread->GetName());
-    for (int i=0; i<3; i++){
-        semaphore->P();
-    }
-
-    printf("Test finished\n");
-}
 
 17. En threads se provee un caso de prueba que implementa el jardın ornamental. Sin
 embargo, el resultado es erroneo. Corrijalo de forma que se mantengan los cambios de
