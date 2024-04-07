@@ -25,7 +25,7 @@
 int numThreads = 5;
 int threadNDone[5];
 
-#ifdef SEMAPHORE_TEST
+#ifdef SEMAPHORE_TEST 
     static Semaphore *semaphore = new Semaphore("test", 3);
 #endif
 

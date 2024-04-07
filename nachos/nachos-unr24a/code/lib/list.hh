@@ -78,10 +78,12 @@ public:
     /// Remove first item from list.
     Item SortedPop(int *keyPtr);
 
+    int Size();
+
 private:
 
     typedef ListElement<Item> ListNode;
-
+    int size;
     ListNode *first;  ///< Head of the list, null if list is empty.
     ListNode *last;   ///< Last element of list.
 };
@@ -105,6 +107,7 @@ template <class Item>
 List<Item>::List()
 {
     first = last = nullptr;
+    size = 0;
 }
 
 /// Prepare a list for deallocation.
@@ -123,6 +126,15 @@ List<Item>::~List()
     }
 }
 
+
+/// return the list size
+template <class Item>
+int
+List<Item>::Size()
+{
+    return size;
+}
+
 // Append an “item” to the end of the list.
 //
 // Allocate a `ListElement` to keep track of the item.  If the list is empty,
@@ -138,9 +150,11 @@ List<Item>::Append(Item item)
     if (IsEmpty()) {
         first = element;
         last = element;
+        size = 1;
     } else {  // Put it after last.
         last->next = element;
         last = element;
+        size++;
     }
 }
 
@@ -161,9 +175,11 @@ List<Item>::Prepend(Item item)
     if (IsEmpty()) {
         first = element;
         last = element;
+        size = 1;
     } else {  // Put it before first.
         element->next = first;
         first = element;
+        size++;
     }
 }
 
@@ -210,6 +226,7 @@ List<Item>::Remove(Item item)
                 last = prev_ptr;
             }
             delete ptr;
+            size--;
             return;
         }
     }
@@ -269,20 +286,24 @@ List<Item>::SortedInsert(Item item, int sortKey)
     if (IsEmpty()) {  // If list is empty, put.
         first = element;
         last = element;
+        size = 1;
     } else if (sortKey < first->key) {
         // Item goes on front of list.
         element->next = first;
         first = element;
+        size++;
     } else {  // Look for first elt in list bigger than item.
         for (ListNode *ptr = first; ptr->next != nullptr; ptr = ptr->next) {
             if (sortKey < ptr->next->key) {
                 element->next = ptr->next;
                 ptr->next = element;
+                size++;
                 return;
             }
         }
         last->next = element;  // Item goes at end of list.
         last = element;
+        size++;
     }
 }
 
@@ -316,6 +337,7 @@ List<Item>::SortedPop(int *keyPtr)
         *keyPtr = element->key;
     }
     delete element;
+    size--;
     return thing;
 }
 

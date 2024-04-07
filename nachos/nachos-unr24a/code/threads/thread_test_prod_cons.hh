@@ -7,6 +7,9 @@
 #ifndef NACHOS_THREADS_THREADTESTPRODCONS__HH
 #define NACHOS_THREADS_THREADTESTPRODCONS__HH
 
+#include "thread.hh"
+#include "lock.hh"
+#include "condition.hh"
 
 void ThreadTestProdCons();
 

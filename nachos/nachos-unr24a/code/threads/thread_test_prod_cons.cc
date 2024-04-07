@@ -7,11 +7,84 @@
 
 #include "thread_test_prod_cons.hh"
 
-#include <stdio.h>
 
+#include <stdio.h>
+#include "system.hh"
+#include <unistd.h>  
+
+Lock *qlock = new Lock("lock");
+Condition *condNoLleno = new Condition("qcond", qlock);
+Condition *condNoVacio = new Condition("qcond", qlock);
+
+List< int > queue;
+
+bool bufferVacio(){
+    return queue.Size() == 0;
+}
+bool bufferLLeno(){
+    return queue.Size() == 3;
+}
+
+bool Done = false;
+
+#define N 100
+
+void productor(void *dummy){
+    
+    
+    for(int i = 1; i < N; i++){
+        
+        qlock->Acquire();
+
+        while( bufferLLeno() ){
+            printf("Productor esperando (buffer lleno)\n");
+            condNoLleno->Wait();
+        }
+
+        queue.Append(i);
+        
+        printf("Productor produce: %d, en la cola hay %d elementos\n", i, queue.Size());
+        qlock->Release();
+
+        condNoVacio->Signal();
+    
+    }
+}
+
+void consumidor(void *dummy){
+    
+    int elem;
+    
+    for(int i = 1; i < N; i++){
+
+        qlock->Acquire();
+
+        while ( bufferVacio() ){
+            printf("Consumidor esperando (buffer vacio)\n");
+            condNoVacio->Wait();
+        }
+
+        elem = queue.Pop();
+        printf("Consumidor consume %d, quedan %d elementos\n", elem, queue.Size());
+        qlock->Release();
+        
+        condNoLleno->Signal();
+
+    }
+
+    Done = true;
+
+}
 
 void
 ThreadTestProdCons()
 {
-    printf("Test unimplemented!\n");
+    Thread *prod = new Thread( "Productor" );
+    prod->Fork(productor, NULL);
+    
+    Thread *cons = new Thread( "Consumidor" );
+    cons->Fork(consumidor, NULL);
+
+    while( !Done )
+        currentThread->Yield();
 }

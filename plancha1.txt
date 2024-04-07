@@ -1,3 +1,5 @@
+Integrantes: Aseguinolaza Luis y Spoletini Bruno
+
 1. ¿Por qué se prefiere emular una CPU en vez de utilizar directamente la CPU existente?
 
     La emulación puede proporcionar un entorno aislado para ejecutar software, 
@@ -237,6 +239,13 @@ en 3. Esto debe ocurrir solo si se define la macro de compilacion SEMAPHORE TEST
 16. Agregue al caso anterior una lınea de depuracion que diga cuando cada hilo hace un P()
 y cuando un V(). La salida debe verse por pantalla solamente si se activa la bandera
 de depuracion correspondiente.
+
+En el archivo Makefile del directorio \threads se cambia la linea
+DEFINES      = -DTHREADS -DDFS_TICKS_FIX 
+por
+DEFINES      = -DTHREADS -DDFS_TICKS_FIX -DSEMAPHORE_TEST
+
+Y el archivo threads_test_simple.cc queda:
 
 /// Copyright (c) 1992-1993 The Regents of the University of California.
 ///               2007-2009 Universidad de Las Palmas de Gran Canaria.
