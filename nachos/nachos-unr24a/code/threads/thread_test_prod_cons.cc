@@ -43,7 +43,7 @@ void productor(void *dummy){
 
         queue.Append(i);
         
-        printf("Productor produce: %d, en la cola hay %d elementos\n", i, queue.Size());
+        printf("Productor produce: %d en %d\n", i, queue.Size()-1);
         qlock->Release();
 
         condNoVacio->Signal();
@@ -65,9 +65,9 @@ void consumidor(void *dummy){
         }
 
         elem = queue.Pop();
-        printf("Consumidor consume %d, quedan %d elementos\n", elem, queue.Size());
+        printf("Consumidor consume: %d en %d\n", elem, queue.Size() );
         qlock->Release();
-        
+
         condNoLleno->Signal();
 
     }

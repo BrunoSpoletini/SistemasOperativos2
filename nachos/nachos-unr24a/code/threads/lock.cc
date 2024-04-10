@@ -42,9 +42,10 @@ Lock::Acquire(){
 
     ASSERT( !IsHeldByCurrentThread() );
 
-    DEBUG('s', "El thread `%s` toma el lock %s\n", currentThread->GetName(), name);
+    DEBUG('s', "El thread `%s` QUIERE el lock %s\n", currentThread->GetName(), name);
 
     semaphore->P();
+    DEBUG('s', "El thread `%s` TOMA el lock %s\n", currentThread->GetName(), name);
     LockHolder = currentThread;
     
 }
@@ -52,11 +53,13 @@ Lock::Acquire(){
 void
 Lock::Release()
 {
+    DEBUG('s', "El thread `%s` QUIERE soltar el lock %s\n", currentThread->GetName(), GetName());
     ASSERT( IsHeldByCurrentThread() );
 
-    DEBUG('s', "El thread `%s` suelta el lock %s\n", currentThread->GetName(), GetName());
-    semaphore->V();
     LockHolder = NULL;
+    semaphore->V();
+    
+    DEBUG('s', "El thread `%s` SUELTA el lock %s\n", currentThread->GetName(), GetName());
 
 }
 
